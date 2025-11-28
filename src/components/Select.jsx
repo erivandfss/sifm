@@ -1,27 +1,25 @@
-export default function Select({ label, value, onChange, options }) {
-
-  console.log("SELECT DEBUG → options recebidas:", options);
-
-  const safeOptions = Array.isArray(options) ? options : [];
-
+// src/components/Select.jsx
+export default function Select({ label, value, onChange, options = [], placeholder = "Selecione..." }) {
   return (
-    <div className="flex flex-col gap-1 mb-3">
-      {label && <label className="font-medium text-gray-700">{label}</label>}
-
+    <div className="mb-4">
+      {label && <label className="block text-gray-700 font-medium mb-1">{label}</label>}
       <select
-        className="border p-2 rounded"
         value={value}
         onChange={onChange}
+        className="w-full px-3 py-2 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        {safeOptions.length > 0 ? (
-          safeOptions.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
+        <option value="" disabled>
+          {placeholder}
+        </option>
+        {options.map((option) => {
+          const val = typeof option === "object" ? option.value : option;
+          const lab = typeof option === "object" ? option.label : option;
+          return (
+            <option key={val} value={val}>
+              {lab}
             </option>
-          ))
-        ) : (
-          <option value="">Nenhuma opção disponível</option>
-        )}
+          );
+        })}
       </select>
     </div>
   );

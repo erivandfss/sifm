@@ -1,5 +1,5 @@
+// src/pages/ChecklistVeiculo.jsx
 import { useState } from "react";
-import Sidebar from "../components/Sidebar";
 
 export default function ChecklistVeiculo() {
   const [veiculoSelecionado, setVeiculoSelecionado] = useState("Hilux 04");
@@ -48,164 +48,158 @@ export default function ChecklistVeiculo() {
   };
 
   return (
-    <div className="flex bg-gray-100 min-h-screen">
-      <Sidebar />
+    <div className="p-10 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold text-gray-700 mb-8">
+        Checklist de Veículo
+      </h1>
 
-      <div className="flex-1 p-10">
+      {/* SELEÇÃO DE VEÍCULO */}
+      <div className="bg-white p-6 rounded-xl shadow mb-8 border border-gray-200">
+        <label className="font-semibold text-gray-600 block mb-2">
+          Selecione o veículo
+        </label>
+        <select
+          className="w-full md:w-64 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={veiculoSelecionado}
+          onChange={(e) => setVeiculoSelecionado(e.target.value)}
+        >
+          <option>Hilux 04</option>
+          <option>Saveiro 03</option>
+          <option>Caminhão 01</option>
+        </select>
+      </div>
 
-        <h1 className="text-3xl font-bold text-gray-700 mb-6">
-          Checklist de Veículo
-        </h1>
+      {/* ABAS */}
+      <div className="flex gap-4 mb-8">
+        <button
+          onClick={() => setAba("entrada")}
+          className={`px-6 py-3 rounded-lg font-semibold transition ${
+            aba === "entrada"
+              ? "bg-blue-700 text-white shadow-lg"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          Checklist de Entrada
+        </button>
+        <button
+          onClick={() => setAba("saida")}
+          className={`px-6 py-3 rounded-lg font-semibold transition ${
+            aba === "saida"
+              ? "bg-blue-700 text-white shadow-lg"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+        >
+          Checklist de Saída
+        </button>
+      </div>
 
-        {/* SELEÇÃO DE VEÍCULO */}
-        <div className="bg-white p-6 rounded-xl shadow mb-6 border border-gray-200">
-          <label className="font-semibold text-gray-600">Selecione o veículo</label>
-          <select
-            className="w-full mt-2 p-2 border rounded"
-            value={veiculoSelecionado}
-            onChange={(e) => setVeiculoSelecionado(e.target.value)}
-          >
-            <option>Hilux 04</option>
-            <option>Saveiro 03</option>
-            <option>Caminhão 01</option>
-          </select>
-        </div>
+      {/* FORMULÁRIO DO CHECKLIST */}
+      <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200 mb-10">
+        <h2 className="text-2xl font-bold text-blue-700 mb-6">
+          {aba === "entrada" ? "Condição Antes do Uso" : "Condição Após o Uso"}
+        </h2>
 
-        {/* ABAS */}
-        <div className="flex gap-4 mb-6">
-          <button
-            onClick={() => setAba("entrada")}
-            className={`px-4 py-2 rounded-lg font-semibold 
-              ${aba === "entrada" ? "bg-blue-700 text-white" : "bg-gray-300 text-gray-800"}`}
-          >
-            Checklist de Entrada
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          {Object.keys(checkInicial).map((item) => {
+            const estadoAtual = aba === "entrada" ? entrada[item] : saida[item];
+            const setEstado = aba === "entrada" ? setEntrada : setSaida;
+            const estadoObj = aba === "entrada" ? entrada : saida;
 
-          <button
-            onClick={() => setAba("saida")}
-            className={`px-4 py-2 rounded-lg font-semibold 
-              ${aba === "saida" ? "bg-blue-700 text-white" : "bg-gray-300 text-gray-800"}`}
-          >
-            Checklist de Saída
-          </button>
-        </div>
-
-        {/* CHECKLIST */}
-        <div className="bg-white p-6 rounded-xl shadow border border-gray-200">
-
-          <h2 className="text-xl font-semibold mb-4 text-blue-600">
-            {aba === "entrada" ? "Condição Antes do Uso" : "Condição Após o Uso"}
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {Object.keys(checkInicial).map((item) => (
-              <div key={item}>
-                <p className="font-semibold text-gray-700 mb-1">
-                  {item.charAt(0).toUpperCase() + item.slice(1)}
+            return (
+              <div key={item} className="bg-gray-50 p-5 rounded-lg">
+                <p className="font-semibold text-gray-800 mb-3">
+                  {item.charAt(0).toUpperCase() + item.slice(1).replace(/([A-Z])/g, " $1")}
                 </p>
-
-                {/* OPÇÕES BOM / RUIM */}
-                <div className="flex gap-4">
-
-                  <label className="flex items-center gap-2">
+                <div className="flex gap-8">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       name={`${item}-${aba}`}
-                      checked={(aba === "entrada" ? entrada[item] : saida[item]) === "bom"}
-                      onChange={() =>
-                        handleCheck(
-                          aba === "entrada" ? setEntrada : setSaida,
-                          aba === "entrada" ? entrada : saida,
-                          item,
-                          "bom"
-                        )
-                      }
+                      checked={estadoAtual === "bom"}
+                      onChange={() => handleCheck(setEstado, estadoObj, item, "bom")}
+                      className="w-5 h-5 text-green-600"
                     />
-                    Bom
+                    <span className="text-green-700 font-medium">Bom</span>
                   </label>
-
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       name={`${item}-${aba}`}
-                      checked={(aba === "entrada" ? entrada[item] : saida[item]) === "ruim"}
-                      onChange={() =>
-                        handleCheck(
-                          aba === "entrada" ? setEntrada : setSaida,
-                          aba === "entrada" ? entrada : saida,
-                          item,
-                          "ruim"
-                        )
-                      }
+                      checked={estadoAtual === "ruim"}
+                      onChange={() => handleCheck(setEstado, estadoObj, item, "ruim")}
+                      className="w-5 h-5 text-red-600"
                     />
-                    Ruim
+                    <span className="text-red-700 font-medium">Ruim</span>
                   </label>
-
                 </div>
               </div>
-            ))}
-
-          </div>
-
-          {/* OBSERVAÇÕES */}
-          <div className="mt-6">
-            <p className="font-semibold text-gray-700">Observações</p>
-            <textarea
-              className="w-full mt-2 border p-3 rounded"
-              placeholder="Descreva qualquer irregularidade encontrada..."
-              rows={4}
-            />
-          </div>
-
-          {/* FOTOS */}
-          <div className="mt-6">
-            <p className="font-semibold text-gray-700 mb-1">Fotos (mockup)</p>
-
-            <div className="flex gap-4">
-              <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">+</div>
-              <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">+</div>
-              <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">+</div>
-            </div>
-          </div>
-
-          {/* BOTÃO */}
-          <button
-            onClick={salvarChecklist}
-            className="mt-6 bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-800"
-          >
-            Salvar Checklist
-          </button>
+            );
+          })}
         </div>
 
-        {/* HISTÓRICO */}
-        <div className="bg-white p-6 rounded-xl shadow border border-gray-200 mt-10">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">
-            Histórico de Checklists do Veículo
-          </h2>
+        {/* OBSERVAÇÕES */}
+        <div className="mb-8">
+          <label className="block font-semibold text-gray-700 mb-2">Observações</label>
+          <textarea
+            className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Descreva qualquer irregularidade encontrada..."
+            rows={4}
+          />
+        </div>
 
+        {/* FOTOS (mock) */}
+        <div className="mb-8">
+          <p className="font-semibold text-gray-700 mb-3">Fotos do veículo</p>
+          <div className="flex gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="w-32 h-32 bg-gray-200 border-2 border-dashed rounded-xl flex items-center justify-center text-4xl text-gray-400 hover:bg-gray-300 cursor-pointer transition"
+              >
+                +
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* BOTÃO SALVAR */}
+        <button
+          onClick={salvarChecklist}
+          className="w-full md:w-auto bg-blue-700 hover:bg-blue-800 text-white font-bold py-4 px-10 rounded-lg shadow-lg transition text-lg"
+        >
+          Salvar Checklist
+        </button>
+      </div>
+
+      {/* HISTÓRICO */}
+      <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">
+          Histórico de Checklists
+        </h2>
+
+        <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b text-left text-gray-600">
-                <th className="pb-2">Veículo</th>
-                <th className="pb-2">Motorista</th>
-                <th className="pb-2">Tipo</th>
-                <th className="pb-2">Data</th>
-                <th className="pb-2">Status</th>
+              <tr className="border-b-2 border-gray-300 text-left text-gray-600">
+                <th className="pb-3">Veículo</th>
+                <th className="pb-3">Motorista</th>
+                <th className="pb-3">Tipo</th>
+                <th className="pb-3">Data</th>
+                <th className="pb-3">Status</th>
               </tr>
             </thead>
-
             <tbody>
               {historico.map((h) => (
-                <tr key={h.id} className="border-b hover:bg-gray-50">
-                  <td className="py-2">{h.veiculo}</td>
-                  <td>{h.motorista}</td>
-                  <td>{h.tipo}</td>
-                  <td>{h.data}</td>
-                  <td>
+                <tr key={h.id} className="border-b hover:bg-gray-50 transition">
+                  <td className="py-4">{h.veiculo}</td>
+                  <td className="py-4">{h.motorista}</td>
+                  <td className="py-4">{h.tipo}</td>
+                  <td className="py-4">{h.data}</td>
+                  <td className="py-4">
                     <span
-                      className={`px-3 py-1 rounded-lg text-white font-semibold 
-                        ${h.status === "Aprovado" ? "bg-green-600" : "bg-red-600"}`}
+                      className={`px-4 py-2 rounded-full text-white font-bold text-sm ${
+                        h.status === "Aprovado" ? "bg-green-600" : "bg-red-600"
+                      }`}
                     >
                       {h.status}
                     </span>
@@ -214,9 +208,7 @@ export default function ChecklistVeiculo() {
               ))}
             </tbody>
           </table>
-
         </div>
-
       </div>
     </div>
   );
