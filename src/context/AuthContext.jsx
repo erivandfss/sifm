@@ -1,5 +1,6 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from 'react';
+import { authService } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -8,41 +9,59 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simula login persistente (depois você coloca localStorage + backend)
-    const saved = localStorage.getItem("sifm-user");
-    if (saved) {
-      setUser(JSON.parse(saved));
+    const token = authService.getToken();
+    const savedUser = authService.getUser();
+
+    if (token && savedUser) {
+      setUser(savedUser);
+      
+      // Verificar se o token ainda é válido
+      authService.getProfile()
+        .then(userData => {
+          setUser(userData);
+        })
+        .catch(() => {
+          authService.logout();
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = (email, senha) => {
-    // MOCK: remover quando tiver backend
-    const mockUsers = {
-      "admin@aguas.com": { email: "admin@aguas.com", role: "admin", nome: "Admin" },
-      "portaria@aguas.com": { email: "portaria@aguas.com", role: "operador", nome: "José" },
-      "manutencao@aguas.com": { email: "manutencao@aguas.com", role: "mantenedor", nome: "Márcio" },
-    };
-
-    if (mockUsers[email] && senha === "123") {
-      const userData = mockUsers[email];
-      localStorage.setItem("sifm-user", JSON.stringify(userData));
-      setUser(userData);
-      return true;
-    }
-    return false;
+    return authService.login(email, senha)
+      .then(data => {
+        setUser(data.usuario);
+        return data;
+      });
   };
 
   const logout = () => {
-    localStorage.removeItem("sifm-user");
+    authService.logout();
     setUser(null);
   };
 
+  const value = {
+    user,
+    login,
+    logout,
+    loading
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
+}

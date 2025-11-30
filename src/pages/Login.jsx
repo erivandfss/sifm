@@ -8,17 +8,22 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErro("");
+    setLoading(true);
 
-    if (login(email, senha)) {
+    try {
+      await login(email, senha);
       navigate("/");
-    } else {
-      setErro("E-mail ou senha incorretos");
+    } catch (error) {
+      setErro(error.message || "Erro ao fazer login");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,20 +42,36 @@ export default function Login() {
         <p className="text-center text-gray-600 mb-8">Sistema Interno de Frota e Manutenção</p>
 
         <form onSubmit={handleSubmit}>
-          <Input label="E-mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <Input label="Senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+          <Input 
+            label="E-mail" 
+            type="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <Input 
+            label="Senha" 
+            type="password" 
+            value={senha} 
+            onChange={(e) => setSenha(e.target.value)}
+            required
+          />
 
           {erro && <p className="text-red-600 text-sm text-center mb-4">{erro}</p>}
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg"
+            disabled={loading}
+            className={`w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg ${
+              loading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            Entrar no Sistema
+            {loading ? 'Entrando...' : 'Entrar no Sistema'}
           </button>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-500">
+          <p><strong>Credenciais de teste:</strong></p>
           <p>admin@aguas.com → 123 (Administrador)</p>
           <p>portaria@aguas.com → 123 (Operador)</p>
           <p>manutencao@aguas.com → 123 (Mantenedor)</p>

@@ -8,12 +8,11 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: postgres
+      POSTGRES_DB: sifm  # Alterado de 'postgres' para 'sifm'
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
   backend:
     build: .
@@ -23,7 +22,7 @@ services:
       DATABASE_URL: postgresql://postgres:123456@postgres:5432/sifm
       JWT_SECRET: supersecreto123456789
     ports:
-      - "5000:5000"
+      - "3002:3002"  # Alterado para a porta 3001 que você estava usando
     depends_on:
       - postgres
     volumes:

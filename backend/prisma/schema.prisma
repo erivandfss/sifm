@@ -1,3 +1,4 @@
+// This is your Prisma schema file
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,40 +9,106 @@ datasource db {
 }
 
 model Usuario {
-  id         Int      @id @default(autoincrement())
-  nome       String
-  email      String   @unique
-  senha      String
-  papel      String   @default("Portaria")
-  status     String   @default("Ativo")
-  permissoes Json?
-  criadoEm   DateTime @default(now())
+  id        Int       @id @default(autoincrement())
+  nome      String
+  email     String    @unique
+  senha     String
+  role      String
+  status    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Veiculo {
-  id       Int    @id @default(autoincrement())
-  nome     String
-  placa    String @unique
-  tipo     String
-  kmAtual  Int
-  status   String @default("Ativo")
-  criadoEm DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  nome      String   // Ex: "Hilux 04"
+  placa     String   @unique
+  tipo      String   // Ex: "Caminhonete", "Caminhão", "Moto"
+  kmAtual   Int      @default(0)
+  status    String   @default("ATIVO") // ATIVO, MANUTENCAO, INATIVO
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  registros RegistroPortaria[]
+  manutencoes Manutencao[]
+  checklists Checklist[]
+
+  @@map("veiculos")
 }
 
 model Motorista {
-  id       Int      @id @default(autoincrement())
-  nome     String
-  cnh      String   @unique
-  validade DateTime
-  telefone String
-  status   String   @default("Ativo")
+  id          Int      @id @default(autoincrement())
+  nome        String
+  cnh         String   @unique
+  validadeCnh DateTime
+  telefone    String?
+  status      String   @default("ATIVO") // ATIVO, INATIVO
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relações
+  registros RegistroPortaria[]
+  checklists Checklist[]
+
+  @@map("motoristas")
 }
 
 model RegistroPortaria {
-  id        Int      @id @default(autoincrement())
-  tipo      String
-  veiculo   String
-  motorista String
-  km        Int
-  dataHora  DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  tipo        String   // ENTRADA, SAIDA
+  km          Int
+  observacao  String?
+  createdAt   DateTime @default(now())
+
+  // Relações
+  veiculoId   Int
+  veiculo     Veiculo   @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+  
+  motoristaId Int
+  motorista   Motorista @relation(fields: [motoristaId], references: [id], onDelete: Cascade)
+
+  @@map("registros_portaria")
+}
+
+model Manutencao {
+  id          Int      @id @default(autoincrement())
+  tipo        String   // TROCA_OLEO, REVISAO, PNEUS, etc.
+  descricao   String
+  km          Int
+  custo       Float?
+  data        DateTime
+  proximaManutencao DateTime?
+  status      String   @default("AGENDADA") // AGENDADA, REALIZADA, CANCELADA
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relação com veículo
+  veiculoId   Int
+  veiculo     Veiculo @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+
+  @@map("manutencoes")
+}
+
+model Checklist {
+  id          Int      @id @default(autoincrement())
+  tipo        String   // ENTRADA, SAIDA
+  veiculoId   Int
+  motoristaId Int
+  data        DateTime @default(now())
+  
+  // Itens do checklist
+  pneus       String?  // BOM, RUIM
+  oleo        String?
+  agua        String?
+  freios      String?
+  luzes       String?
+  lataria     String?
+  observacoes String?
+
+  // Relações
+  veiculo     Veiculo   @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+  motorista   Motorista @relation(fields: [motoristaId], references: [id], onDelete: Cascade)
+
+  @@map("checklists")
 }

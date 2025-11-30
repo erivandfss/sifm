@@ -6,6 +6,7 @@ import { useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Portaria from "./pages/Portaria";
+import PortariaForm from "./pages/PortariaForm"; // Import the new component
 import Veiculos from "./pages/Veiculos";
 import Motoristas from "./pages/Motoristas";
 import Manutencao from "./pages/Manutencao";
@@ -19,7 +20,7 @@ import ChecklistVeiculo from "./pages/ChecklistVeiculo";
 // Layout com Header + Sidebar
 import Layout from "./components/Layout";
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute({ children, requiredRoles = [] }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -32,6 +33,11 @@ function ProtectedRoute({ children }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Check if user has required role
+  if (requiredRoles.length > 0 && !requiredRoles.includes(user.role)) {
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -53,11 +59,26 @@ export default function App() {
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/portaria" element={<Portaria />} />
+                  <Route 
+                    path="/portaria/nova" 
+                    element={
+                      <ProtectedRoute requiredRoles={['ADMIN', 'PORTARIA']}>
+                        <PortariaForm />
+                      </ProtectedRoute>
+                    } 
+                  />
                   <Route path="/veiculos" element={<Veiculos />} />
                   <Route path="/motoristas" element={<Motoristas />} />
                   <Route path="/manutencao" element={<Manutencao />} />
                   <Route path="/relatorios" element={<Relatorios />} />
-                  <Route path="/usuarios" element={<Usuarios />} />
+                  <Route 
+                    path="/usuarios" 
+                    element={
+                      <ProtectedRoute requiredRoles={['ADMIN']}>
+                        <Usuarios />
+                      </ProtectedRoute>
+                    } 
+                  />
                   <Route path="/configuracoes" element={<Configuracoes />} />
                   <Route path="/historico-veiculo" element={<HistoricoVeiculo />} />
                   <Route path="/mapa-frota" element={<MapaFrota />} />

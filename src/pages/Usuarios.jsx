@@ -1,23 +1,40 @@
 // src/pages/Usuarios.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usuariosService } from '../services/api';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Usuarios() {
   const [showModal, setShowModal] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(null);
   const [editando, setEditando] = useState(null);
-
-  const [usuarios, setUsuarios] = useState([
-    { id: 1, nome: "Admin Master", email: "admin@aguas.com", perfil: "Administrador", status: "Ativo" },
-    { id: 2, nome: "João Silva", email: "joao@aguas.com", perfil: "Portaria", status: "Ativo" },
-    { id: 3, nome: "Maria Oliveira", email: "maria@aguas.com", perfil: "Manutenção", status: "Inativo" },
-    { id: 4, nome: "Carlos Santos", email: "carlos@aguas.com", perfil: "Relatórios", status: "Ativo" },
-  ]);
+  const [usuarios, setUsuarios] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Campos do modal
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [perfil, setPerfil] = useState("Portaria");
   const [senha, setSenha] = useState("");
+
+  // Carregar usuários
+  useEffect(() => {
+    const carregarUsuarios = async () => {
+      try {
+        const data = await usuariosService.getAll();
+        setUsuarios(data);
+      } catch (err) {
+        console.error('Erro ao carregar usuários:', err);
+        setError('Erro ao carregar usuários. Tente novamente mais tarde.');
+        toast.error('Erro ao carregar usuários');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarUsuarios();
+  }, []);
 
   const abrirModal = (usuario = null) => {
     if (usuario) {
@@ -36,40 +53,83 @@ export default function Usuarios() {
     setShowModal(true);
   };
 
-  const salvarUsuario = () => {
+  const salvarUsuario = async () => {
     if (!nome || !email || (!editando && !senha)) {
-      alert("Preencha todos os campos obrigatórios!");
+      toast.warning('Preencha todos os campos obrigatórios!');
       return;
     }
 
-    if (editando) {
-      setUsuarios(usuarios.map(u =>
-        u.id === editando.id ? { ...u, nome, email, perfil } : u
-      ));
-    } else {
-      const novo = {
-        id: Date.now(),
-        nome: nome.trim(),
-        email: email.trim(),
+    try {
+      const usuarioData = { 
+        nome: nome.trim(), 
+        email: email.trim(), 
         perfil,
-        status: "Ativo"
+        ...(senha && { senha })
       };
-      setUsuarios([novo, ...usuarios]);
+
+      if (editando) {
+        const usuarioAtualizado = await usuariosService.update(editando.id, usuarioData);
+        setUsuarios(usuarios.map(u => 
+          u.id === editando.id ? usuarioAtualizado : u
+        ));
+        toast.success('Usuário atualizado com sucesso!');
+      } else {
+        const novoUsuario = await usuariosService.create(usuarioData);
+        setUsuarios([novoUsuario, ...usuarios]);
+        toast.success('Usuário criado com sucesso!');
+      }
+
+      setShowModal(false);
+    } catch (error) {
+      console.error('Erro ao salvar usuário:', error);
+      toast.error(error.message || 'Erro ao salvar usuário');
     }
-
-    setShowModal(false);
   };
 
-  const excluirUsuario = () => {
-    setUsuarios(usuarios.filter(u => u.id !== showConfirmDelete));
-    setShowConfirmDelete(null);
+  const excluirUsuario = async () => {
+    try {
+      await usuariosService.delete(showConfirmDelete);
+      setUsuarios(usuarios.filter(u => u.id !== showConfirmDelete));
+      setShowConfirmDelete(null);
+      toast.success('Usuário excluído com sucesso!');
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error);
+      toast.error('Erro ao excluir usuário');
+    }
   };
 
-  const alternarStatus = (id) => {
-    setUsuarios(usuarios.map(u =>
-      u.id === id ? { ...u, status: u.status === "Ativo" ? "Inativo" : "Ativo" } : u
-    ));
+  const alternarStatus = async (id, statusAtual) => {
+    try {
+      const novoStatus = statusAtual === "Ativo" ? "Inativo" : "Ativo";
+      await usuariosService.updateStatus(id, novoStatus);
+      setUsuarios(usuarios.map(u => 
+        u.id === id ? { ...u, status: novoStatus } : u
+      ));
+      toast.success(`Status atualizado para ${novoStatus}`);
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      toast.error('Erro ao atualizar status do usuário');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-10">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Erro: </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-10 bg-gray-100 min-h-screen">
@@ -129,7 +189,7 @@ export default function Usuarios() {
                       </td>
                       <td className="py-5 text-center">
                         <button
-                          onClick={() => alternarStatus(u.id)}
+                          onClick={() => alternarStatus(u.id, u.status)}
                           className={`px-6 py-2 rounded-full font-bold text-sm transition ${
                             u.status === "Ativo"
                               ? "bg-green-100 text-green-800 hover:bg-green-200"
@@ -180,6 +240,7 @@ export default function Usuarios() {
                     onChange={(e) => setNome(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Ex: Ana Clara"
+                    required
                   />
                 </div>
 
@@ -191,6 +252,7 @@ export default function Usuarios() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="usuario@empresa.com"
+                    required
                   />
                 </div>
 
@@ -200,6 +262,7 @@ export default function Usuarios() {
                     value={perfil}
                     onChange={(e) => setPerfil(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
                   >
                     <option value="Portaria">Portaria</option>
                     <option value="Manutenção">Manutenção</option>
@@ -217,6 +280,8 @@ export default function Usuarios() {
                       onChange={(e) => setSenha(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Mínimo 6 caracteres"
+                      minLength="6"
+                      required={!editando}
                     />
                   </div>
                 )}
